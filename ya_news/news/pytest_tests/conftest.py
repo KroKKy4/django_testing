@@ -20,11 +20,10 @@ def author_client(client, author):
 
 @pytest.fixture
 def news():
-    news = News.objects.create(
+    return News.objects.create(
         title='Заголовок новости',
-        text='Текст новости',
+        text='Текст новости'
     )
-    return news
 
 
 @pytest.fixture
@@ -34,12 +33,11 @@ def pk_for_args(news):
 
 @pytest.fixture
 def comment(author, news):
-    comment = Comment.objects.create(
+    return Comment.objects.create(
         news=news,
         author=author,
         text='Текст комментария'
     )
-    return comment
 
 
 @pytest.fixture
@@ -49,7 +47,7 @@ def pk_for_comment(comment):
 
 @pytest.fixture
 def add_news():
-    add_news = News.objects.bulk_create(
+    return News.objects.bulk_create(
         News(
             title=f'Заголовок новости {i}',
             text='Текст',
@@ -57,11 +55,11 @@ def add_news():
         )
         for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
-    return add_news
 
 
 @pytest.fixture
 def add_comments(news, author):
+    comments = []
     for i in range(11):
         comment = Comment.objects.create(
             news=news,
@@ -70,7 +68,8 @@ def add_comments(news, author):
         )
         comment.created = timezone.now() + timedelta(days=i)
         comment.save()
-    return add_comments
+        comments.append(comment)
+    return comments
 
 
 @pytest.fixture

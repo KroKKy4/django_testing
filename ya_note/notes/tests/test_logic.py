@@ -1,13 +1,14 @@
 from http import HTTPStatus
 
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-
-from pytils.translit import slugify
-
 from notes.forms import WARNING
 from notes.models import Note
+from pytils.translit import slugify
+
+from .const_urls import ADD, DELETE, EDIT, LOGIN, SUCCESS
 
 User = get_user_model()
 
@@ -17,9 +18,9 @@ class TestNoteCreation(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create(username='Пользователь')
-        cls.url = reverse('notes:add')
-        cls.login_url = reverse('users:login')
-        cls.done_url = reverse('notes:success')
+        cls.url = reverse(ADD)
+        cls.login_url = reverse(LOGIN)
+        cls.done_url = reverse(SUCCESS)
         cls.form_data = {'title': 'title',
                          'text': 'text',
                          'slug': 'slug'}
@@ -85,8 +86,8 @@ class TestNoteEditDelete(TestCase):
             slug='slug',
             author=cls.author,
         )
-        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
-        cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
+        cls.edit_url = reverse(EDIT, args=(cls.note.slug,))
+        cls.delete_url = reverse(DELETE, args=(cls.note.slug,))
         cls.form_data = {
             'title': cls.NEW_NOTE_TITLE,
             'text': cls.NEW_NOTE_TEXT
@@ -95,7 +96,7 @@ class TestNoteEditDelete(TestCase):
 
     def test_author_can_delete_note(self):
         response = self.author_client.post(self.delete_url)
-        self.assertRedirects(response, reverse('notes:success'))
+        self.assertRedirects(response, reverse(SUCCESS))
         notes_count = Note.objects.count()
         self.assertLess(notes_count, self.notes_count_control)
 
