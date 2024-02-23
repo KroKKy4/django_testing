@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from notes.forms import NoteForm
 from notes.models import Note
 
 from .const_urls import ADD, EDIT, LIST
@@ -45,4 +46,5 @@ class TestRoutes(TestCase):
             with self.subTest():
                 url = reverse(name, args=args)
                 response = self.author_client.get(url)
+                self.assertIsInstance(response.context['form'], NoteForm)
                 self.assertIn('form', response.context)
