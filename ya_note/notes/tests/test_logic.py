@@ -73,13 +73,17 @@ class TestLogic(CustomTestCase):
         self.assertEqual(self.note.slug, note_from_db.slug)
 
     def test_author_can_delete_note(self):
+        notes_before = list(Note.objects.all())
         url = reverse(DELETE, args=(self.note.slug,))
         response = self.author_client.post(url)
         self.assertRedirects(response, reverse(SUCCESS))
-        assert Note.objects.count() == 0
+        notes_after = list(Note.objects.all())
+        self.assertEqual(notes_after, notes_before[:-1])
 
     def test_other_user_cant_delete_note(self):
+        notes_before = list(Note.objects.all())
         url = reverse(DELETE, args=(self.note.slug,))
         response = self.reader_client.post(url)
-        assert response.status_code == HTTPStatus.NOT_FOUND
-        assert Note.objects.count() == 1
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        notes_after = list(Note.objects.all())
+        assert notes_after == notes_before

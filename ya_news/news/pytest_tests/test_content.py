@@ -1,46 +1,45 @@
-import pytest
-
 from datetime import date
 
+import pytest
 from django.conf import settings
-from django.urls import reverse
 from django.utils import timezone
 
+from news.forms import CommentForm
+from news.pytest_tests.conftest import URL
 
-@pytest.mark.parametrize(
-    'username, access',
-    (
-        (pytest.lazy_fixture('admin_client'), True),
-        (pytest.lazy_fixture('client'), False)
-    ),
-)
-@pytest.mark.django_db
-def test_user_form_access(username, access, pk_for_args):
-    url = reverse('news:detail', args=pk_for_args)
-    response = username.get(url)
-    result = 'form' in response.context
-    assert result == access
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.usefixtures('add_news')
-@pytest.mark.django_db
-def test_news_count(client):
-    response = client.get(reverse('news:home'))
-    object_list = list(response.context['object_list'])
-    assert len(object_list) == settings.NEWS_COUNT_ON_HOME_PAGE
-    assert isinstance(object_list[0].date, date)
-    assert object_list == sorted(
-        object_list, key=lambda news: news.date, reverse=True
+def test_news_count_order(client, news_list):
+    response = client.get(URL.home)
+    news = list(response.context['object_list'])
+    assert isinstance(news[0].date, date)
+    assert news == sorted(
+        news, key=lambda x: x.date, reverse=True
     )
 
 
-@pytest.mark.usefixtures('add_comments')
-@pytest.mark.django_db
-def test_comments_order(client, pk_for_args, news):
-    response = client.get(reverse('news:detail', args=pk_for_args))
+def test_news_count_on_home_page(client, news_list):
+    response = client.get(URL.home)
+    news = list(response.context['object_list'])
+    assert len(news) == settings.NEWS_COUNT_ON_HOME_PAGE
+
+
+def test_comments_order(client, news, comments_list):
+    response = client.get(URL.detail)
     assert 'news' in response.context
     news = response.context['news']
     all_comments = list(news.comment_set.all())
     assert isinstance(all_comments[0].created, timezone.datetime)
-    assert all_comments == sorted(
-        all_comments, key=lambda comment: comment.created)
+    assert all_comments == sorted(all_comments, key=lambda x: x.created)
+
+
+def test_admin_has_form(admin_client, news):
+    admin_response = admin_client.get(URL.detail)
+    assert ('form' in admin_response.context)
+    assert isinstance(admin_response.context['form'], CommentForm)
+
+
+def test_anonymous_hasnt_form(client, news):
+    response = client.get(URL.detail)
+    assert 'form' not in response.context

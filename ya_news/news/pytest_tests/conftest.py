@@ -1,10 +1,45 @@
+from collections import namedtuple
+from datetime import datetime, timedelta
+
 import pytest
-from datetime import timedelta
-
-from django.utils import timezone
 from django.conf import settings
+from django.test import Client
+from django.urls import reverse
+from django.utils import timezone
+from pytest_lazyfixture import lazy_fixture
 
-from news.models import News, Comment
+from news.models import Comment, News
+
+
+PK = 1
+COMMENT_TEXT = 'Текст комментария'
+NEW_COMMENT_TEXT = 'Новый текст комментария'
+ADMIN = lazy_fixture('admin_client')
+AUTHOR = lazy_fixture('author_client')
+CLIENT = lazy_fixture('client')
+
+URL_NAME = namedtuple(
+    'NAME',
+    [
+        'home',
+        'detail',
+        'edit',
+        'delete',
+        'login',
+        'logout',
+        'signup',
+    ],
+)
+
+URL = URL_NAME(
+    reverse('news:home'),
+    reverse('news:detail', args=(PK,)),
+    reverse('news:edit', args=(PK,)),
+    reverse('news:delete', args=(PK,)),
+    reverse('users:login'),
+    reverse('users:logout'),
+    reverse('users:signup'),
+)
 
 
 @pytest.fixture
@@ -13,67 +48,47 @@ def author(django_user_model):
 
 
 @pytest.fixture
-def author_client(client, author):
-    client.force_login(author)
-    return client
+def author_client(author):
+    author_client = Client()
+    author_client.force_login(author)
+    return author_client
 
 
 @pytest.fixture
 def news():
-    return News.objects.create(
-        title='Заголовок новости',
-        text='Текст новости'
-    )
+    news = News.objects.create(title='Заголовок', text='Текст')
+    return news
 
 
 @pytest.fixture
-def pk_for_args(news):
-    return news.pk,
-
-
-@pytest.fixture
-def comment(author, news):
-    return Comment.objects.create(
-        news=news,
-        author=author,
-        text='Текст комментария'
-    )
-
-
-@pytest.fixture
-def pk_for_comment(comment):
-    return comment.pk,
-
-
-@pytest.fixture
-def add_news():
-    return News.objects.bulk_create(
+def news_list():
+    News.objects.bulk_create(
         News(
-            title=f'Заголовок новости {i}',
-            text='Текст',
-            date=timezone.now() - timedelta(days=i)
+            title=f'Заголовок {i}',
+            text='Текст новости',
+            date=datetime.today().date() - timedelta(days=i),
         )
         for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
 
 
 @pytest.fixture
-def add_comments(news, author):
-    comments = []
-    for i in range(11):
-        comment = Comment.objects.create(
-            news=news,
-            author=author,
-            text=f'Текст комментария {i}'
-        )
-        comment.created = timezone.now() + timedelta(days=i)
-        comment.save()
-        comments.append(comment)
-    return comments
+def comment(author, news):
+    comment = Comment.objects.create(
+        news=news,
+        author=author,
+        text='Текст комментария',
+    )
+    return comment
 
 
 @pytest.fixture
-def form_data():
-    return {
-        'text': 'Новый текст комментария'
-    }
+def comments_list(author, news):
+    for i in range(3):
+        comment = Comment.objects.create(
+            news=news,
+            author=author,
+            text=f'Комментарий {i}',
+        )
+        comment.created = timezone.now() + timedelta(days=i)
+        comment.save()
