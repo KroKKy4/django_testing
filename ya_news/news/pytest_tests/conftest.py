@@ -11,7 +11,6 @@ from pytest_lazyfixture import lazy_fixture
 from news.models import Comment, News
 
 
-PK = 1
 COMMENT_TEXT = 'Текст комментария'
 NEW_COMMENT_TEXT = 'Новый текст комментария'
 ADMIN = lazy_fixture('admin_client')
@@ -33,9 +32,9 @@ URL_NAME = namedtuple(
 
 URL = URL_NAME(
     reverse('news:home'),
-    reverse('news:detail', args=(PK,)),
-    reverse('news:edit', args=(PK,)),
-    reverse('news:delete', args=(PK,)),
+    reverse('news:detail', args=(1,)),
+    reverse('news:edit', args=(1,)),
+    reverse('news:delete', args=(1,)),
     reverse('users:login'),
     reverse('users:logout'),
     reverse('users:signup'),

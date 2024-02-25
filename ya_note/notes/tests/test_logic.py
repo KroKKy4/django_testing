@@ -64,7 +64,7 @@ class TestLogic(CustomTestCase):
         self.assertEqual(self.note.slug, self.form_data['slug'])
 
     def test_other_user_cant_edit_note(self):
-        url = reverse('notes:edit', args=(self.note.slug,))
+        url = reverse(EDIT, args=(self.note.slug,))
         response = self.reader_client.post(url, data=self.form_data)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         note_from_db = Note.objects.get(id=self.note.id)
@@ -73,17 +73,17 @@ class TestLogic(CustomTestCase):
         self.assertEqual(self.note.slug, note_from_db.slug)
 
     def test_author_can_delete_note(self):
-        notes_before = list(Note.objects.all())
+        notes_before = Note.objects.count()
         url = reverse(DELETE, args=(self.note.slug,))
         response = self.author_client.post(url)
         self.assertRedirects(response, reverse(SUCCESS))
-        notes_after = list(Note.objects.all())
-        self.assertEqual(notes_after, notes_before[:-1])
+        notes_after = Note.objects.count()
+        self.assertEqual(notes_after, notes_before - 1)
 
     def test_other_user_cant_delete_note(self):
-        notes_before = list(Note.objects.all())
+        notes_before = Note.objects.count()
         url = reverse(DELETE, args=(self.note.slug,))
         response = self.reader_client.post(url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        notes_after = list(Note.objects.all())
-        assert notes_after == notes_before
+        notes_after = Note.objects.count()
+        self.assertEqual(notes_after, notes_before)
